@@ -15,23 +15,34 @@ client=ClobClient(HOST,key=PK,chain_id=137,signature_type=3,funder=FUNDER,creds=
 print("clob ok", flush=True)
 
 def mkt():
-    r=requests.get(GAMMA+"/markets?closed=false&limit=200",timeout=20)
+    r=requests.get(GAMMA+"/events?closed=false&active=true&limit=80",timeout=20)
     r.raise_for_status()
-    best=None
+    for e in r.json():
+        title=(e.get("title") or "").lower()
+        if "bitcoin" not in title and "btc" not in title: continue
+        for m in e.get("markets") or []:
+            q=(m.get("question") or "").lower()
+            if "up or down" not in q and "up/down" not in q: continue
+            toks=m.get("clobTokenIds") or []
+            if isinstance(toks,str):
+                try: toks=json.loads(toks)
+                except: toks=[]
+            if len(toks)>=2:
+                print("hit", q[:70], flush=True)
+                return toks[0],toks[1]
+    r=requests.get(GAMMA+"/markets?closed=false&limit=300",timeout=20)
+    r.raise_for_status()
     for m in r.json():
         q=(m.get("question") or "").lower()
-        if "bitcoin" not in q and "btc" not in q: continue
-        if "up or down" not in q and "up/down" not in q: continue
-        if "5" not in q and "five" not in q: continue
-        best=m
-        break
-    if not best: return None
-    toks=best.get("clobTokenIds") or []
-    if isinstance(toks,str):
-        try: toks=json.loads(toks)
-        except: toks=[]
-    if len(toks)<2: return None
-    return toks[0],toks[1]
+        if ("bitcoin" in q or "btc" in q) and ("up or down" in q or "up/down" in q):
+            toks=m.get("clobTokenIds") or []
+            if isinstance(toks,str):
+                try: toks=json.loads(toks)
+                except: toks=[]
+            if len(toks)>=2:
+                print("hit", q[:70], flush=True)
+                return toks[0],toks[1]
+    return None
 
 def px(tid):
     r=requests.get(HOST+"/price",params={"token_id":tid,"side":"buy"},timeout=15)
