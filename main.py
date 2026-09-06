@@ -1,7 +1,7 @@
 import time
 import json
 import requests
-print("bot online 8", flush=True)
+print("bot online 9", flush=True)
 while True:
     try:
         ts = (int(time.time()) // 300) * 300
@@ -13,7 +13,15 @@ while True:
         prices = mk.get("outcomePrices") or "[]"
         if isinstance(prices, str):
             prices = json.loads(prices)
-        print("pm", r.status_code, e.get("title", slug)[:50], "up", prices[0] if prices else "?", "down", prices[1] if len(prices) > 1 else "?", flush=True)
+        up = float(prices[0]) if prices else 0
+        down = float(prices[1]) if len(prices) > 1 else 0
+        if up >= 0.58:
+            sig = "PAPER BUY UP"
+        elif down >= 0.58:
+            sig = "PAPER BUY DOWN"
+        else:
+            sig = "WAIT"
+        print("pm", r.status_code, "up", up, "down", down, sig, flush=True)
     except Exception:
         print("err", flush=True)
     time.sleep(30)
