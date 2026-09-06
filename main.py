@@ -5,7 +5,8 @@ while True:
     try:
         ts = (int(time.time()) // 300) * 300
         slug = "btc-updown-5m-" + str(ts)
-        r = requests.get("https://gamma-api.polymarket.com/events?slug=" + slug, timeout=15)
+        url = "https://gamma-api.polymarket.com/events?slug=" + slug
+        r = requests.get(url, timeout=15)
         data = r.json() if r.ok else []
         e = data[0] if data else {}
         mk = (e.get("markets") or [{}])[0]
@@ -21,7 +22,7 @@ while True:
             sig = tag + " BUY DOWN"
         else:
             sig = "WAIT"
-        print("pm", "up", up, "down", down, sig, slug, flush=True)
+        print("pm", up, down, sig, flush=True)
     except Exception:
         print("err", flush=True)
     time.sleep(30)
