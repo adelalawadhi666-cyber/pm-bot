@@ -1,6 +1,16 @@
 import os, time, json, requests
+from py_clob_client.client import ClobClient
 MODE = os.getenv("MODE", "paper").strip().lower()
+PK = os.getenv("PK", "")
+client = None
 print("bot online", MODE, flush=True)
+if MODE == "live" and len(PK) > 20:
+    try:
+        client = ClobClient("https://clob.polymarket.com", key=PK, chain_id=137)
+        client.set_api_creds(client.create_or_derive_api_creds())
+        print("clob ok", flush=True)
+    except Exception as e:
+        print("clob err", type(e).__name__, flush=True)
 while True:
     try:
         ts = (int(time.time()) // 300) * 300
