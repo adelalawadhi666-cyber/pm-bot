@@ -1,7 +1,7 @@
 import time
 import json
 import requests
-print("bot online 9", flush=True)
+print("bot online 10", flush=True)
 while True:
     try:
         ts = (int(time.time()) // 300) * 300
@@ -21,7 +21,7 @@ while True:
             sig = "PAPER BUY DOWN"
         else:
             sig = "WAIT"
-        print("pm", r.status_code, "up", up, "down", down, sig, flush=True)
+        print("pm", "up", up, "down", down, sig, slug, flush=True)
     except Exception:
         print("err", flush=True)
     time.sleep(30)
