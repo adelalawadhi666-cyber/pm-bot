@@ -40,11 +40,16 @@ while True:
                 tid = json.loads(tid)
             tok = tid[0] if "UP" in sig else tid[1]
             sz = float(os.getenv("SIZE", "1"))
-            try:
-                o = client.create_and_post_order(OrderArgs(token_id=str(tok), price=0.51, size=sz, side=BUY))
-                print("ord ok", flush=True)
-            except Exception as e:
-                print("ord err", type(e).__name__, flush=True)
+            px = down if "DOWN" in sig else up
+            px = min(0.99, max(0.01, round(px, 2)))
+            if px >= 0.90:
+                print("skip late", px, flush=True)
+            else:
+                try:
+                    o = client.create_and_post_order(OrderArgs(token_id=str(tok), price=px, size=sz, side=BUY))
+                    print("ord ok", px, flush=True)
+                except Exception as e:
+                    print("ord err", type(e).__name__, str(e)[:80], flush=True)
     except Exception:
         print("err", flush=True)
     time.sleep(30)
