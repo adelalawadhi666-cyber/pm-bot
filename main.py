@@ -1,6 +1,6 @@
 import time
 import requests
-print("bot online", flush=True)
+print("bot online 2", flush=True)
 while True:
     try:
         r = requests.get("https://gamma-api.polymarket.com/markets?limit=1", timeout=15)
