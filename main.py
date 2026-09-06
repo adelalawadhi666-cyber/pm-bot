@@ -14,33 +14,37 @@ creds=client.create_or_derive_api_key()
 client=ClobClient(HOST,key=PK,chain_id=137,signature_type=3,funder=FUNDER,creds=creds)
 print("clob ok", flush=True)
 
+def toks_of(m):
+    toks=m.get("clobTokenIds") or []
+    if isinstance(toks,str):
+        try: toks=json.loads(toks)
+        except: toks=[]
+    return toks if len(toks)>=2 else None
+
 def mkt():
-    r=requests.get(GAMMA+"/events?closed=false&active=true&limit=80",timeout=20)
+    r=requests.get(GAMMA+"/markets",params={"closed":"false","active":"true","limit":200,"order":"endDate","ascending":"true"},timeout=20)
     r.raise_for_status()
-    for e in r.json():
-        title=(e.get("title") or "").lower()
-        if "bitcoin" not in title and "btc" not in title: continue
-        for m in e.get("markets") or []:
-            q=(m.get("question") or "").lower()
-            if "up or down" not in q and "up/down" not in q: continue
-            toks=m.get("clobTokenIds") or []
-            if isinstance(toks,str):
-                try: toks=json.loads(toks)
-                except: toks=[]
-            if len(toks)>=2:
-                print("hit", q[:70], flush=True)
-                return toks[0],toks[1]
-    r=requests.get(GAMMA+"/markets?closed=false&limit=300",timeout=20)
-    r.raise_for_status()
+    now=time.time()
+    best=None
     for m in r.json():
+        slug=(m.get("slug") or "")
         q=(m.get("question") or "").lower()
-        if ("bitcoin" in q or "btc" in q) and ("up or down" in q or "up/down" in q):
-            toks=m.get("clobTokenIds") or []
-            if isinstance(toks,str):
-                try: toks=json.loads(toks)
-                except: toks=[]
-            if len(toks)>=2:
-                print("hit", q[:70], flush=True)
+        if not slug.startswith("btc-updown-5m"): continue
+        if m.get("acceptingOrders") is False: continue
+        toks=toks_of(m)
+        if not toks: continue
+        print("hit", q[:80], flush=True)
+        return toks[0],toks[1]
+    win=int(now//300*300)
+    for off in (0,300,-300,600,-600,900):
+        slug=f"btc-updown-5m-{win+off}"
+        r=requests.get(GAMMA+"/markets",params={"slug":slug},timeout=15)
+        arr=r.json() if r.ok else []
+        if isinstance(arr,dict): arr=[arr]
+        for m in arr or []:
+            toks=toks_of(m)
+            if toks:
+                print("hit slug", slug, flush=True)
                 return toks[0],toks[1]
     return None
 
