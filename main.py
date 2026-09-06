@@ -32,6 +32,17 @@ while True:
         else:
             sig = "WAIT"
         print("pm", up, down, sig, flush=True)
+        if client and sig.startswith("LIVE BUY"):
+            tid = mk.get("clobTokenIds") or "[]"
+            if isinstance(tid, str):
+                tid = json.loads(tid)
+            tok = tid[0] if "UP" in sig else tid[1]
+            sz = float(os.getenv("SIZE", "1"))
+            try:
+                o = client.create_and_post_order({"tokenID": str(tok), "price": 0.51, "size": sz, "side": "BUY"})
+                print("ord ok", flush=True)
+            except Exception as e:
+                print("ord err", type(e).__name__, flush=True)
     except Exception:
         print("err", flush=True)
     time.sleep(30)
