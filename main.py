@@ -27,47 +27,8 @@ def mkt():
     now=datetime.now(et)
     m=(now.minute//5)*5
     start=now.replace(minute=m,second=0,microsecond=0)
-    for i in range(-1,4):
+    for i in (1,2,0,3):
         w=start+timedelta(minutes=5*i)
         slug=f"btc-updown-5m-{int(w.timestamp())}"
         r=requests.get(GAMMA+"/markets",params={"slug":slug},timeout=15)
         if not r.ok: continue
-        arr=r.json()
-        if isinstance(arr,dict): arr=[arr]
-        for m0 in arr or []:
-            toks=toks_of(m0)
-            if toks:
-                print("hit", slug, (m0.get("question") or "")[:60], flush=True)
-                return toks[0],toks[1]
-    return None
-
-def px(tid):
-    r=requests.get(HOST+"/price",params={"token_id":tid,"side":"buy"},timeout=15)
-    r.raise_for_status()
-    return float(r.json().get("price") or 0)
-
-bought=None
-while True:
-    try:
-        ids=mkt()
-        if not ids:
-            print("no mkt", flush=True)
-            time.sleep(8)
-            continue
-        up,down=ids
-        pu,pd=px(up),px(down)
-        if pu>=0.70:
-            print(f"pm {pu:.3f} {pd:.3f} LIVE BUY UP", flush=True)
-            if MODE=="LIVE" and bought!=up:
-                print(client.create_order(token_id=up,price=min(pu+0.02,0.99),size=SIZE,side=Side.BUY), flush=True)
-                bought=up
-        elif pd>=0.70:
-            print(f"pm {pu:.3f} {pd:.3f} LIVE BUY DOWN", flush=True)
-            if MODE=="LIVE" and bought!=down:
-                print(client.create_order(token_id=down,price=min(pd+0.02,0.99),size=SIZE,side=Side.BUY), flush=True)
-                bought=down
-        else:
-            print(f"pm {pu:.3f} {pd:.3f} WAIT", flush=True)
-    except Exception as e:
-        print("err", type(e).__name__, str(e)[:160], flush=True)
-    time.sleep(8)
