@@ -1,18 +1,17 @@
 import os, time, json, requests
-from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import OrderArgs
-from py_clob_client.order_builder.constants import BUY
+from py_clob_client_v2 import ClobClient, OrderArgs, PartialCreateOrderOptions, Side
 MODE = os.getenv("MODE", "paper").strip().lower()
 PK = os.getenv("POLY_PK", "")
 client = None
 print("bot online", MODE, flush=True)
 if MODE == "live" and len(PK) > 20:
     try:
-        client = ClobClient("https://clob.polymarket.com", key=PK, chain_id=137)
-        client.set_api_creds(client.create_or_derive_api_creds())
+        client = ClobClient(host="https://clob.polymarket.com", chain_id=137, key=PK)
+        creds = client.create_or_derive_api_key()
+        client = ClobClient(host="https://clob.polymarket.com", chain_id=137, key=PK, creds=creds)
         print("clob ok", flush=True)
     except Exception as e:
-        print("clob err", type(e).__name__, flush=True)
+        print("clob err", type(e).__name__, str(e)[:80], flush=True)
 while True:
     try:
         ts = (int(time.time()) // 300) * 300
@@ -46,7 +45,7 @@ while True:
                 print("skip late", px, flush=True)
             else:
                 try:
-                    o = client.create_and_post_order(OrderArgs(token_id=str(tok), price=px, size=sz, side=BUY))
+                    o = client.create_and_post_order(OrderArgs(token_id=str(tok), price=px, size=sz, side=Side.BUY), options=PartialCreateOrderOptions(tick_size="0.01"))
                     print("ord ok", px, flush=True)
                 except Exception as e:
                     print("ord err", type(e).__name__, str(e)[:80], flush=True)
