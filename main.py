@@ -1,5 +1,7 @@
 import os, time, json, requests
 from py_clob_client.client import ClobClient
+from py_clob_client.clob_types import OrderArgs
+from py_clob_client.order_builder.constants import BUY
 MODE = os.getenv("MODE", "paper").strip().lower()
 PK = os.getenv("POLY_PK", "")
 client = None
@@ -39,7 +41,7 @@ while True:
             tok = tid[0] if "UP" in sig else tid[1]
             sz = float(os.getenv("SIZE", "1"))
             try:
-                o = client.create_and_post_order({"tokenID": str(tok), "price": 0.51, "size": sz, "side": "BUY"})
+                o = client.create_and_post_order(OrderArgs(token_id=str(tok), price=0.51, size=sz, side=BUY))
                 print("ord ok", flush=True)
             except Exception as e:
                 print("ord err", type(e).__name__, flush=True)
