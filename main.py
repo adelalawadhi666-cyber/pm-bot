@@ -1,7 +1,7 @@
 import os, time, json, requests
 from py_clob_client.client import ClobClient
 MODE = os.getenv("MODE", "paper").strip().lower()
-PK = os.getenv("PK", "")
+PK = os.getenv("POLY_PK", "")
 client = None
 print("bot online", MODE, flush=True)
 if MODE == "live" and len(PK) > 20:
