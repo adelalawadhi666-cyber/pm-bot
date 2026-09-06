@@ -1,5 +1,5 @@
 import os, time, json, requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from py_clob_client_v2 import ClobClient, Side
 
 HOST="https://clob.polymarket.com"
@@ -22,27 +22,23 @@ def toks_of(m):
         except: toks=[]
     return toks if len(toks)>=2 else None
 
-def alive(m):
-    if m.get("acceptingOrders") is False: return False
-    if m.get("closed") is True: return False
-    ed=m.get("endDate") or ""
-    try:
-        t=datetime.fromisoformat(ed.replace("Z","+00:00")).timestamp()
-        return t>time.time()+30
-    except:
-        return False
-
 def mkt():
-    r=requests.get(GAMMA+"/markets",params={"closed":"false","limit":300,"order":"endDate","ascending":"true"},timeout=20)
-    r.raise_for_status()
-    for m in r.json():
-        slug=(m.get("slug") or "")
-        if not slug.startswith("btc-updown-5m"): continue
-        if not alive(m): continue
-        toks=toks_of(m)
-        if not toks: continue
-        print("hit", (m.get("question") or "")[:80], flush=True)
-        return toks[0],toks[1]
+    et=timezone(timedelta(hours=-4))
+    now=datetime.now(et)
+    m=(now.minute//5)*5
+    start=now.replace(minute=m,second=0,microsecond=0)
+    for i in range(-1,4):
+        w=start+timedelta(minutes=5*i)
+        slug=f"btc-updown-5m-{int(w.timestamp())}"
+        r=requests.get(GAMMA+"/markets",params={"slug":slug},timeout=15)
+        if not r.ok: continue
+        arr=r.json()
+        if isinstance(arr,dict): arr=[arr]
+        for m0 in arr or []:
+            toks=toks_of(m0)
+            if toks:
+                print("hit", slug, (m0.get("question") or "")[:60], flush=True)
+                return toks[0],toks[1]
     return None
 
 def px(tid):
