@@ -1,6 +1,8 @@
 import time
+from datetime import datetime, timezone
 
 print("bot online")
 while True:
-    time.sleep(60)
-    print("alive")
+    now = datetime.now(timezone.utc).strftime("%H:%M:%S")
+    print("alive", now)
+    time.sleep(30)
