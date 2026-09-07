@@ -59,12 +59,12 @@ while True:
             continue
         up,down=found[0],found[1]
         pu,pd=px(up),px(down)
-        if pu>=0.62 and pu<=0.85:
+if pu>=0.55 and pu<=0.85:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY UP", flush=True)
             if MODE=="LIVE" and client and bought!=up:
                 print(client.create_order(token_id=up,price=min(pu+0.02,0.99),size=SIZE,side=Side.BUY), flush=True)
                 bought=up
-        elif pd>=0.62 and pd<=0.85:
+        elif pd>=0.55 and pd<=0.85:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY DOWN", flush=True)
             if MODE=="LIVE" and client and bought!=down:
                 print(client.create_order(token_id=down,price=min(pd+0.02,0.99),size=SIZE,side=Side.BUY), flush=True)
