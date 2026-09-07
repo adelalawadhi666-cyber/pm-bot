@@ -16,7 +16,7 @@ try:
     pk = os.getenv("POLY_PK") or os.getenv("PK") or ""
     funder = os.getenv("FUNDER") or None
     if pk:
-        client = ClobClient("https://clob.polymarket.com", key=pk, chain_id=137, funder=funder)
+        client = ClobClient("https://clob.polymarket.com", key=pk, chain_id=137, signature_type=2, funder=funder)
         api = os.getenv("POLY_API_KEY") or os.getenv("POLY_API")
         sec = os.getenv("POLY_SECRET") or os.getenv("POLY_SEC")
         pas = os.getenv("POLY_PASSPHRASE") or os.getenv("POLY_PASS") or os.getenv("POLY_PAS")
