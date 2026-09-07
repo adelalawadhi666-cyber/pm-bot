@@ -6,29 +6,29 @@ MODE = os.getenv("MODE", "LIVE")
 SIZE = float(os.getenv("SIZE", "2"))
 bought = None
 client = None
-BUY = "BUY"
 
 try:
-    from py_clob_client.client import ClobClient
-    from py_clob_client.clob_types import OrderArgs, OrderType
-    from py_clob_client.order_builder.constants import BUY as BUY_SIDE
-    BUY = BUY_SIDE
+    from py_clob_client_v2 import ApiCreds, ClobClient, OrderArgs, OrderType, PartialCreateOrderOptions, Side
     pk = os.getenv("POLY_PK") or os.getenv("PK") or ""
     funder = os.getenv("FUNDER") or None
+    api = os.getenv("POLY_API_KEY") or os.getenv("POLY_API")
+    sec = os.getenv("POLY_SECRET") or os.getenv("POLY_SEC")
+    pas = os.getenv("POLY_PASSPHRASE") or os.getenv("POLY_PASS") or os.getenv("POLY_PAS")
     if pk:
-        client = ClobClient("https://clob.polymarket.com", key=pk, chain_id=137, signature_type=2, funder=funder)
-        api = os.getenv("POLY_API_KEY") or os.getenv("POLY_API")
-        sec = os.getenv("POLY_SECRET") or os.getenv("POLY_SEC")
-        pas = os.getenv("POLY_PASSPHRASE") or os.getenv("POLY_PASS") or os.getenv("POLY_PAS")
+        creds = None
         if api and sec and pas:
-            try:
-                from py_clob_client.clob_types import ApiCreds
-                client.set_api_creds(ApiCreds(api_key=api, api_secret=sec, api_passphrase=pas))
-            except Exception as e:
-                print("creds_off", type(e).__name__, flush=True)
+            creds = ApiCreds(api_key=api, api_secret=sec, api_passphrase=pas)
+        client = ClobClient(
+            host="https://clob.polymarket.com",
+            chain_id=137,
+            key=pk,
+            creds=creds,
+            signature_type=2,
+            funder=funder,
+        )
         print("client_on", flush=True)
 except Exception as e:
-    print("client_off", type(e).__name__, str(e)[:80], flush=True)
+    print("client_off", type(e).__name__, str(e)[:120], flush=True)
 
 def toks_of(m):
     t = m.get("clobTokenIds") or m.get("clob_token_ids") or []
@@ -51,9 +51,9 @@ def px(tok):
     return 0.0
 
 def buy(tok, price):
-    args = OrderArgs(token_id=str(tok), price=round(float(price), 2), size=SIZE, side=BUY)
-    signed = client.create_order(args)
-    return client.post_order(signed, OrderType.GTC)
+    args = OrderArgs(token_id=str(tok), price=round(float(price), 2), size=SIZE, side=Side.BUY)
+    opts = PartialCreateOrderOptions(tick_size="0.01")
+    return client.create_and_post_order(order_args=args, options=opts, order_type=OrderType.GTC)
 
 print("bot online", flush=True)
 
