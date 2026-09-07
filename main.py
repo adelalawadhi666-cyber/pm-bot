@@ -64,7 +64,7 @@ while True:
         m = (now.minute // 5) * 5
         start = now.replace(minute=m, second=0, microsecond=0)
         found = None
-        for i in (1, 2, 0):
+        for i in (0, 1, 2):
             w = start + timedelta(minutes=5 * i)
             slug = f"btc-updown-5m-{int(w.timestamp())}"
             r = requests.get(GAMMA + "/markets", params={"slug": slug}, timeout=15)
