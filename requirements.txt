@@ -1,2 +1,2 @@
 requests
-py-clob-client-v2
+py-clob-client
