@@ -2,39 +2,7 @@ import os, time, json, requests
 from datetime import datetime, timedelta, timezone
 
 GAMMA = "https://gamma-api.polymarket.com"
-MODE = os.getenv("MODE", "LIVE")
 SIZE = float(os.getenv("SIZE", "2"))
-bought = None
-client = None
-
-try:
-    from py_clob_client_v2 import ApiCreds, ClobClient, OrderArgs, OrderType, PartialCreateOrderOptions, Side
-    pk = os.getenv("POLY_PK") or os.getenv("PK") or ""
-    funder = os.getenv("FUNDER") or None
-    api = os.getenv("POLY_API_KEY") or os.getenv("POLY_API")
-    sec = os.getenv("POLY_SECRET") or os.getenv("POLY_SEC")
-    pas = os.getenv("POLY_PASSPHRASE") or os.getenv("POLY_PASS") or os.getenv("POLY_PAS")
-    if pk:
-        creds = None
-        try:
-            temp = ClobClient(host="https://clob.polymarket.com", chain_id=137, key=pk, signature_type=1, funder=funder)
-            creds = temp.create_or_derive_api_key()
-            print("creds_ok", flush=True)
-        except Exception as e:
-            print("creds_derive_off", type(e).__name__, flush=True)
-            if api and sec and pas:
-                creds = ApiCreds(api_key=api, api_secret=sec, api_passphrase=pas)
-        client = ClobClient(
-            host="https://clob.polymarket.com",
-            chain_id=137,
-            key=pk,
-            creds=creds,
-            signature_type=1,
-            funder=funder,
-        )
-        print("client_on", flush=True)
-except Exception as e:
-    print("client_off", type(e).__name__, str(e)[:120], flush=True)
 
 def toks_of(m):
     t = m.get("clobTokenIds") or m.get("clob_token_ids") or []
@@ -56,12 +24,7 @@ def px(tok):
         pass
     return 0.0
 
-def buy(tok, price):
-    args = OrderArgs(token_id=str(tok), price=round(float(price), 2), size=SIZE, side=Side.BUY)
-    opts = PartialCreateOrderOptions(tick_size="0.01")
-    return client.create_and_post_order(order_args=args, options=opts, order_type=OrderType.GTC)
-
-print("bot online", flush=True)
+print("bot online paper", flush=True)
 
 while True:
     try:
@@ -94,17 +57,11 @@ while True:
         up, down = found[0], found[1]
         pu, pd = px(up), px(down)
         if pu >= 0.55 and pu <= 0.85:
-            print(f"pm {pu:.3f} {pd:.3f} LIVE BUY UP", flush=True)
-            if MODE == "LIVE" and client and bought != up:
-                print(buy(up, pu), flush=True)
-                bought = up
+            print(f"SIGNAL BUY UP {pu:.3f} {pd:.3f} size={SIZE}", flush=True)
         elif pd >= 0.55 and pd <= 0.85:
-            print(f"pm {pu:.3f} {pd:.3f} LIVE BUY DOWN", flush=True)
-            if MODE == "LIVE" and client and bought != down:
-                print(buy(down, pd), flush=True)
-                bought = down
+            print(f"SIGNAL BUY DOWN {pu:.3f} {pd:.3f} size={SIZE}", flush=True)
         else:
-            print(f"pm {pu:.3f} {pd:.3f} WAIT", flush=True)
+            print(f"WAIT {pu:.3f} {pd:.3f}", flush=True)
     except Exception as e:
         print("err", type(e).__name__, str(e)[:160], flush=True)
     time.sleep(8)
