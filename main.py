@@ -6,9 +6,13 @@ MODE = os.getenv("MODE", "LIVE")
 SIZE = float(os.getenv("SIZE", "2"))
 bought = None
 client = None
+BUY = "BUY"
 
 try:
     from py_clob_client.client import ClobClient
+    from py_clob_client.clob_types import OrderArgs, OrderType
+    from py_clob_client.order_builder.constants import BUY as BUY_SIDE
+    BUY = BUY_SIDE
     pk = os.getenv("POLY_PK") or os.getenv("PK") or ""
     funder = os.getenv("FUNDER") or None
     if pk:
@@ -46,6 +50,11 @@ def px(tok):
         pass
     return 0.0
 
+def buy(tok, price):
+    args = OrderArgs(token_id=str(tok), price=round(float(price), 2), size=SIZE, side=BUY)
+    signed = client.create_order(args)
+    return client.post_order(signed, OrderType.GTC)
+
 print("bot online", flush=True)
 
 while True:
@@ -81,15 +90,15 @@ while True:
         if pu >= 0.55 and pu <= 0.85:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY UP", flush=True)
             if MODE == "LIVE" and client and bought != up:
-                print(client.create_order(token_id=up, price=round(pu, 2), size=SIZE, side="BUY"), flush=True)
+                print(buy(up, pu), flush=True)
                 bought = up
         elif pd >= 0.55 and pd <= 0.85:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY DOWN", flush=True)
             if MODE == "LIVE" and client and bought != down:
-                print(client.create_order(token_id=down, price=round(pd, 2), size=SIZE, side="BUY"), flush=True)
+                print(buy(down, pd), flush=True)
                 bought = down
         else:
             print(f"pm {pu:.3f} {pd:.3f} WAIT", flush=True)
     except Exception as e:
-        print("err", type(e).__name__, str(e)[:120], flush=True)
+        print("err", type(e).__name__, str(e)[:160], flush=True)
     time.sleep(8)
