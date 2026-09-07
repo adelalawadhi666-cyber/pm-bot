@@ -3,17 +3,28 @@ from datetime import datetime, timedelta, timezone
 
 GAMMA = "https://gamma-api.polymarket.com"
 MODE = os.getenv("MODE", "LIVE")
-SIZE = 2.0
+SIZE = float(os.getenv("SIZE", "2"))
 bought = None
 client = None
 
 try:
     from py_clob_client.client import ClobClient
-    key = os.getenv("PK") or os.getenv("PRIVATE_KEY")
-    if key:
-        client = ClobClient("https://clob.polymarket.com", key=key, chain_id=137)
+    pk = os.getenv("POLY_PK") or os.getenv("PK") or ""
+    funder = os.getenv("FUNDER") or None
+    if pk:
+        client = ClobClient("https://clob.polymarket.com", key=pk, chain_id=137, funder=funder)
+        api = os.getenv("POLY_API_KEY") or os.getenv("POLY_API")
+        sec = os.getenv("POLY_SECRET") or os.getenv("POLY_SEC")
+        pas = os.getenv("POLY_PASSPHRASE") or os.getenv("POLY_PASS") or os.getenv("POLY_PAS")
+        if api and sec and pas:
+            try:
+                from py_clob_client.clob_types import ApiCreds
+                client.set_api_creds(ApiCreds(api_key=api, api_secret=sec, api_passphrase=pas))
+            except Exception as e:
+                print("creds_off", type(e).__name__, flush=True)
+        print("client_on", flush=True)
 except Exception as e:
-    print("client_off", type(e).__name__, flush=True)
+    print("client_off", type(e).__name__, str(e)[:80], flush=True)
 
 def toks_of(m):
     t = m.get("clobTokenIds") or m.get("clob_token_ids") or []
@@ -27,25 +38,6 @@ def toks_of(m):
     return None
 
 def px(tok):
-    try:
-        r = requests.get(GAMMA + "/markets", params={"clob_token_ids": tok}, timeout=15)
-        if not r.ok:
-            return 0.0
-        arr = r.json()
-        if isinstance(arr, dict):
-            arr = [arr]
-        for m in arr or []:
-            prices = m.get("outcomePrices") or m.get("outcome_prices")
-            if isinstance(prices, str):
-                prices = json.loads(prices)
-            ids = m.get("clobTokenIds") or m.get("clob_token_ids") or []
-            if isinstance(ids, str):
-                ids = json.loads(ids)
-            if prices and ids and tok in ids:
-                i = ids.index(tok)
-                return float(prices[i])
-    except Exception:
-        pass
     try:
         r = requests.get("https://clob.polymarket.com/price", params={"token_id": tok, "side": "buy"}, timeout=15)
         if r.ok:
