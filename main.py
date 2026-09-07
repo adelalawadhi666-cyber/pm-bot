@@ -19,7 +19,7 @@ try:
             chain_id=137,
             key=pk,
             creds=creds,
-            signature_type=2,
+            signature_type=3,
             funder=funder,
         )
         print("client_on", flush=True)
