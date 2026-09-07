@@ -11,15 +11,25 @@ try:
     from py_clob_client_v2 import ApiCreds, ClobClient, OrderArgs, OrderType, PartialCreateOrderOptions, Side
     pk = os.getenv("POLY_PK") or os.getenv("PK") or ""
     funder = os.getenv("FUNDER") or None
+    api = os.getenv("POLY_API_KEY") or os.getenv("POLY_API")
+    sec = os.getenv("POLY_SECRET") or os.getenv("POLY_SEC")
+    pas = os.getenv("POLY_PASSPHRASE") or os.getenv("POLY_PASS") or os.getenv("POLY_PAS")
     if pk:
-        temp = ClobClient(host="https://clob.polymarket.com", chain_id=137, key=pk)
-        creds = temp.create_or_derive_api_key()
+        creds = None
+        try:
+            temp = ClobClient(host="https://clob.polymarket.com", chain_id=137, key=pk, signature_type=1, funder=funder)
+            creds = temp.create_or_derive_api_key()
+            print("creds_ok", flush=True)
+        except Exception as e:
+            print("creds_derive_off", type(e).__name__, flush=True)
+            if api and sec and pas:
+                creds = ApiCreds(api_key=api, api_secret=sec, api_passphrase=pas)
         client = ClobClient(
             host="https://clob.polymarket.com",
             chain_id=137,
             key=pk,
             creds=creds,
-            signature_type=3,
+            signature_type=1,
             funder=funder,
         )
         print("client_on", flush=True)
