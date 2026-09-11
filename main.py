@@ -1,9 +1,6 @@
 import os, time, json, requests
 from datetime import datetime, timezone, timedelta
-from py_clob_client_v2 import (
-    ApiCreds, ClobClient, OrderArgs, OrderType,
-    PartialCreateOrderOptions, Side
-)
+from py_clob_client_v2 import ClobClient, OrderArgs, OrderType, PartialCreateOrderOptions, Side
 
 HOST="https://clob.polymarket.com"
 GAMMA="https://gamma-api.polymarket.com"
@@ -11,17 +8,33 @@ PK=os.getenv("POLY_PK")
 FUNDER=os.getenv("FUNDER")
 SIZE=float(os.getenv("SIZE","1"))
 MODE=os.getenv("MODE","LIVE")
-SIG=int(os.getenv("SIG_TYPE","1"))
 LO, HI = 0.58, 0.75
 print("bot online live", flush=True)
-client=None
-try:
+
+def make_client(sig):
     tmp=ClobClient(host=HOST, key=PK, chain_id=137)
-    creds=tmp.create_or_derive_api_key()
-    client=ClobClient(host=HOST, key=PK, chain_id=137, creds=creds, signature_type=SIG, funder=FUNDER)
-    print("clob ok", flush=True)
-except Exception as e:
-    print("clob err", type(e).__name__, str(e)[:200], flush=True)
+    try:
+        creds=tmp.create_or_derive_api_key()
+    except Exception:
+        creds=None
+    if creds is None:
+        return None
+    return ClobClient(host=HOST, key=PK, chain_id=137, creds=creds, signature_type=sig, funder=FUNDER)
+
+client=None
+used_sig=None
+for sig in (3,1,0):
+    try:
+        c=make_client(sig)
+        if c:
+            client=c
+            used_sig=sig
+            print("clob ok sig",sig, flush=True)
+            break
+    except Exception as e:
+        print("sig fail",sig, type(e).__name__, str(e)[:120], flush=True)
+if not client:
+    print("clob err no client", flush=True)
 
 def toks_of(m):
     t=m.get("clobTokenIds") or []
@@ -84,5 +97,12 @@ while True:
         else:
             print(f"pm {pu:.3f} {pd:.3f} WAIT",flush=True)
     except Exception as e:
-        print("err",type(e).__name__,str(e)[:200],flush=True)
+        msg=str(e)
+        print("err",type(e).__name__,msg[:200],flush=True)
+        if client and "deposit" in msg.lower():
+            try:
+                client=make_client(3)
+                print("switched sig 3", flush=True)
+            except Exception as e2:
+                print("switch fail",str(e2)[:120], flush=True)
     time.sleep(5)
