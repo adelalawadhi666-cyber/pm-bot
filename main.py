@@ -10,6 +10,7 @@ PK=os.getenv("POLY_PK")
 FUNDER=os.getenv("FUNDER")
 SIZE=float(os.getenv("SIZE","1"))
 MODE=os.getenv("MODE","LIVE")
+LO, HI = 0.58, 0.75
 print("bot online live", flush=True)
 client=None
 try:
@@ -58,14 +59,14 @@ while True:
             bought=None
         up,down=found[0],found[1]
         pu,pd=px(up),px(down)
-        if 0.55<=pu<=0.88:
+        if LO<=pu<=HI:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY UP",flush=True)
             if MODE=="LIVE" and client and bought!=up:
                 o=client.create_order(OrderArgs(token_id=up,price=min(pu+0.02,0.99),size=SIZE,side=BUY))
                 print(client.post_order(o, OrderType.GTC),flush=True)
                 bought=up
                 bought_slug=slug
-        elif 0.55<=pd<=0.88:
+        elif LO<=pd<=HI:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY DOWN",flush=True)
             if MODE=="LIVE" and client and bought!=down:
                 o=client.create_order(OrderArgs(token_id=down,price=min(pd+0.02,0.99),size=SIZE,side=BUY))
