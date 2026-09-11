@@ -37,7 +37,6 @@ while True:
         et=timezone(timedelta(hours=-4))
         now=datetime.now(et)
         start=now.replace(minute=(now.minute//5)*5,second=0,microsecond=0)
-        elapsed=(now-start).total_seconds()
         found=None
         slug=None
         for i in (0,1):
@@ -59,15 +58,14 @@ while True:
             bought=None
         up,down=found[0],found[1]
         pu,pd=px(up),px(down)
-        late = elapsed>=180
-        if late and 0.55<=pu<=0.88:
+        if 0.55<=pu<=0.88:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY UP",flush=True)
             if MODE=="LIVE" and client and bought!=up:
                 o=client.create_order(OrderArgs(token_id=up,price=min(pu+0.02,0.99),size=SIZE,side=BUY))
                 print(client.post_order(o, OrderType.GTC),flush=True)
                 bought=up
                 bought_slug=slug
-        elif late and 0.55<=pd<=0.88:
+        elif 0.55<=pd<=0.88:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY DOWN",flush=True)
             if MODE=="LIVE" and client and bought!=down:
                 o=client.create_order(OrderArgs(token_id=down,price=min(pd+0.02,0.99),size=SIZE,side=BUY))
