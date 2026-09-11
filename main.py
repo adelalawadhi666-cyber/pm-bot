@@ -1,8 +1,9 @@
 import os, time, json, requests
 from datetime import datetime, timezone, timedelta
-from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import ApiCreds, OrderArgs, OrderType
-from py_clob_client.order_builder.constants import BUY
+from py_clob_client_v2 import (
+    ApiCreds, ClobClient, OrderArgs, OrderType,
+    PartialCreateOrderOptions, Side
+)
 
 HOST="https://clob.polymarket.com"
 GAMMA="https://gamma-api.polymarket.com"
@@ -10,15 +11,20 @@ PK=os.getenv("POLY_PK")
 FUNDER=os.getenv("FUNDER")
 SIZE=float(os.getenv("SIZE","1"))
 MODE=os.getenv("MODE","LIVE")
+SIG=int(os.getenv("SIG_TYPE","1"))
 LO, HI = 0.58, 0.75
 print("bot online live", flush=True)
 client=None
 try:
-    creds=ApiCreds(os.getenv("POLY_API_KEY") or os.getenv("POLY_API"), os.getenv("POLY_SECRET") or os.getenv("POLY_SEC"), os.getenv("POLY_PASSPHRASE") or os.getenv("POLY_PAS"))
-    client=ClobClient(HOST,key=PK,chain_id=137,creds=creds,signature_type=1,funder=FUNDER)
+    creds=ApiCreds(
+        api_key=os.getenv("POLY_API_KEY") or os.getenv("POLY_API"),
+        api_secret=os.getenv("POLY_SECRET") or os.getenv("POLY_SEC"),
+        api_passphrase=os.getenv("POLY_PASSPHRASE") or os.getenv("POLY_PAS"),
+    )
+    client=ClobClient(host=HOST, key=PK, chain_id=137, creds=creds, signature_type=SIG, funder=FUNDER)
     print("clob ok", flush=True)
 except Exception as e:
-    print("clob err", type(e).__name__, str(e)[:160], flush=True)
+    print("clob err", type(e).__name__, str(e)[:200], flush=True)
 
 def toks_of(m):
     t=m.get("clobTokenIds") or []
@@ -30,6 +36,13 @@ def toks_of(m):
 def px(tid):
     r=requests.get(HOST+"/price",params={"token_id":tid,"side":"buy"},timeout=15)
     return float((r.json() or {}).get("price") or 0) if r.ok else 0
+
+def buy(tid, price):
+    return client.create_and_post_order(
+        order_args=OrderArgs(token_id=tid, price=min(round(price+0.01,2),0.99), size=SIZE, side=Side.BUY),
+        options=PartialCreateOrderOptions(tick_size="0.01"),
+        order_type=OrderType.GTC,
+    )
 
 bought=None
 bought_slug=None
@@ -62,19 +75,17 @@ while True:
         if LO<=pu<=HI:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY UP",flush=True)
             if MODE=="LIVE" and client and bought!=up:
-                o=client.create_order(OrderArgs(token_id=up,price=min(pu+0.02,0.99),size=SIZE,side=BUY))
-                print(client.post_order(o, OrderType.GTC),flush=True)
+                print(buy(up, pu), flush=True)
                 bought=up
                 bought_slug=slug
         elif LO<=pd<=HI:
             print(f"pm {pu:.3f} {pd:.3f} LIVE BUY DOWN",flush=True)
             if MODE=="LIVE" and client and bought!=down:
-                o=client.create_order(OrderArgs(token_id=down,price=min(pd+0.02,0.99),size=SIZE,side=BUY))
-                print(client.post_order(o, OrderType.GTC),flush=True)
+                print(buy(down, pd), flush=True)
                 bought=down
                 bought_slug=slug
         else:
             print(f"pm {pu:.3f} {pd:.3f} WAIT",flush=True)
     except Exception as e:
-        print("err",type(e).__name__,str(e)[:160],flush=True)
+        print("err",type(e).__name__,str(e)[:200],flush=True)
     time.sleep(5)
