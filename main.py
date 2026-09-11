@@ -16,11 +16,8 @@ LO, HI = 0.58, 0.75
 print("bot online live", flush=True)
 client=None
 try:
-    creds=ApiCreds(
-        api_key=os.getenv("POLY_API_KEY") or os.getenv("POLY_API"),
-        api_secret=os.getenv("POLY_SECRET") or os.getenv("POLY_SEC"),
-        api_passphrase=os.getenv("POLY_PASSPHRASE") or os.getenv("POLY_PAS"),
-    )
+    tmp=ClobClient(host=HOST, key=PK, chain_id=137)
+    creds=tmp.create_or_derive_api_key()
     client=ClobClient(host=HOST, key=PK, chain_id=137, creds=creds, signature_type=SIG, funder=FUNDER)
     print("clob ok", flush=True)
 except Exception as e:
